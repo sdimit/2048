@@ -16,7 +16,7 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
 // Restart the game
 GameManager.prototype.restart = function () {
   this.actuator.continue();
-  this.setup();
+  this.clearTiles();
 };
 
 // Keep playing after winning
@@ -51,9 +51,34 @@ GameManager.prototype.setup = function () {
 
 // Set up the initial tiles to start the game with
 GameManager.prototype.addStartTiles = function () {
-  for (var i = 0; i < this.startTiles; i++) {
-    this.addRandomTile();
+  var localTiles = JSON.parse(localStorage.getItem('tiles'));
+  if (localTiles) {
+    this.restoreTiles(localTiles);
+  } else {
+    for (var i = 0; i < this.startTiles; i++) {
+      this.addRandomTile();
+    }
   }
+};
+
+GameManager.prototype.restoreTiles = function (localTiles) {
+  for (var x = 0; x < this.size; x++) {
+    for (var y = 0; y < this.size; y++) {
+      if (localTiles[x][y]) {
+        var tile = new Tile ({x:x, y:y}, localTiles[x][y].value);
+        this.grid.insertTile(tile);
+      }
+    }
+  }
+};
+
+GameManager.prototype.saveTiles = function () {
+  localStorage.setItem('tiles', JSON.stringify(this.grid.cells));
+};
+
+GameManager.prototype.clearTiles = function () {
+  localStorage.removeItem('tiles');
+  this.setup();
 };
 
 // Adds a tile in a random position
@@ -161,6 +186,9 @@ GameManager.prototype.move = function (direction) {
 
     this.actuate();
   }
+
+  self.saveTiles();
+
 };
 
 // Get the vector representing the chosen direction
