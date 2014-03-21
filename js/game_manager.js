@@ -17,7 +17,7 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
 // Restart the game
 GameManager.prototype.restart = function () {
   this.actuator.continue();
-  this.clearTiles();
+  this.scoreManager.clearState();
   this.setup();
 };
 
@@ -39,7 +39,7 @@ GameManager.prototype.isGameTerminated = function () {
 GameManager.prototype.setup = function () {
   this.grid        = new Grid(this.size);
 
-  this.score       = 0;
+  this.score       = this.scoreManager.getScore();
   this.over        = false;
   this.won         = false;
   this.keepPlaying = false;
@@ -53,7 +53,7 @@ GameManager.prototype.setup = function () {
 
 // Set up the initial tiles to start the game with
 GameManager.prototype.addStartTiles = function () {
-  var localTiles = JSON.parse(localStorage.getItem('tiles'));
+  var localTiles = this.scoreManager.getTiles();
   if (localTiles) {
     this.restoreTiles(localTiles);
   } else {
@@ -79,11 +79,6 @@ GameManager.prototype.saveTiles = function () {
   localStorage.setItem('tiles', JSON.stringify(this.grid.cells));
 };
 
-GameManager.prototype.clearTiles = function () {
-  localStorage.removeItem('undotiles');
-  localStorage.removeItem('tiles');
-};
-
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
@@ -105,15 +100,16 @@ GameManager.prototype.undoMove = function() {
 
 // Sends the updated grid to the actuator
 GameManager.prototype.actuate = function () {
-  if (this.scoreManager.get() < this.score) {
-    this.scoreManager.set(this.score);
+  this.scoreManager.setScore(this.score);
+  if (this.scoreManager.getBestScore() < this.score) {
+    this.scoreManager.setBestScore(this.score);
   }
 
   this.actuator.actuate(this.grid, {
     score:      this.score,
     over:       this.over,
     won:        this.won,
-    bestScore:  this.scoreManager.get(),
+    bestScore:  this.scoreManager.getBestScore(),
     terminated: this.isGameTerminated()
   });
 
