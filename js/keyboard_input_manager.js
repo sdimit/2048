@@ -50,6 +50,7 @@ KeyboardInputManager.prototype.listen = function () {
       }
 
       if (event.which === 32) self.restart.bind(self)(event);
+      if (event.which === 85) self.undoMove.bind(self)(event);
     }
   });
 
@@ -96,6 +97,11 @@ KeyboardInputManager.prototype.listen = function () {
 KeyboardInputManager.prototype.restart = function (event) {
   event.preventDefault();
   this.emit("restart");
+};
+
+KeyboardInputManager.prototype.undoMove = function (event) {
+  event.preventDefault();
+  this.emit("undoMove");
 };
 
 KeyboardInputManager.prototype.keepPlaying = function (event) {

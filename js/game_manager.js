@@ -9,6 +9,7 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
   this.inputManager.on("move", this.move.bind(this));
   this.inputManager.on("restart", this.restart.bind(this));
   this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
+  this.inputManager.on("undoMove", this.undoMove.bind(this));
 
   this.setup();
 }
@@ -17,6 +18,7 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
 GameManager.prototype.restart = function () {
   this.actuator.continue();
   this.clearTiles();
+  this.setup();
 };
 
 // Keep playing after winning
@@ -73,12 +75,13 @@ GameManager.prototype.restoreTiles = function (localTiles) {
 };
 
 GameManager.prototype.saveTiles = function () {
+  localStorage.setItem('undotiles', localStorage.getItem('tiles'));
   localStorage.setItem('tiles', JSON.stringify(this.grid.cells));
 };
 
 GameManager.prototype.clearTiles = function () {
+  localStorage.removeItem('undotiles');
   localStorage.removeItem('tiles');
-  this.setup();
 };
 
 // Adds a tile in a random position
@@ -88,6 +91,15 @@ GameManager.prototype.addRandomTile = function () {
     var tile = new Tile(this.grid.randomAvailableCell(), value);
 
     this.grid.insertTile(tile);
+  }
+};
+
+GameManager.prototype.undoMove = function() {
+  var undoTiles = localStorage.getItem('undotiles');
+  if (undoTiles) {
+    localStorage.setItem('tiles', undoTiles);
+    localStorage.removeItem('undotiles');
+    this.setup();
   }
 };
 
