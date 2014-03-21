@@ -39,35 +39,51 @@ GameManager.prototype.isGameTerminated = function () {
 GameManager.prototype.setup = function () {
   this.grid        = new Grid(this.size);
 
-  this.score       = this.scoreManager.getScore();
-  this.over        = false;
-  this.won         = false;
-  this.keepPlaying = false;
+  var state        = this.getCurrentState();
+
+  this.score       = state.score;
+  this.over        = state.over;
+  this.won         = state.won;
+  this.keepPlaying = state.keepPlaying;
 
   // Add the initial tiles
-  this.addStartTiles();
+  this.addStartTiles(state.tiles);
 
   // Update the actuator
   this.actuate();
 };
 
+GameManager.prototype.getCurrentState = function() {
+  var localState = this.scoreManager.curState();
+  if (!localState) {
+    localState = {
+      tiles:       null,
+      score:       0,
+      over:        false,
+      won:         false,
+      keepPlaying: false
+    };
+  }
+  return localState;
+}
+
 // Set up the initial tiles to start the game with
-GameManager.prototype.addStartTiles = function () {
-  var localTiles = this.scoreManager.getTiles();
-  if (localTiles) {
-    this.restoreTiles(localTiles);
+GameManager.prototype.addStartTiles = function (tiles) {
+  if (tiles) {
+    this.restoreTiles(tiles);
   } else {
     for (var i = 0; i < this.startTiles; i++) {
       this.addRandomTile();
     }
+    this.saveTiles();
   }
 };
 
-GameManager.prototype.restoreTiles = function (localTiles) {
+GameManager.prototype.restoreTiles = function (tiles) {
   for (var x = 0; x < this.size; x++) {
     for (var y = 0; y < this.size; y++) {
-      if (localTiles[x][y]) {
-        var tile = new Tile ({x:x, y:y}, localTiles[x][y].value);
+      if (tiles[x][y]) {
+        var tile = new Tile ({x:x, y:y}, tiles[x][y].value);
         this.grid.insertTile(tile);
       }
     }
@@ -75,8 +91,13 @@ GameManager.prototype.restoreTiles = function (localTiles) {
 };
 
 GameManager.prototype.saveTiles = function () {
-  localStorage.setItem('undotiles', localStorage.getItem('tiles'));
-  localStorage.setItem('tiles', JSON.stringify(this.grid.cells));
+  this.scoreManager.pushState({
+    tiles:       this.grid.cells,
+    won:         this.won,
+    over:        this.over,
+    score:       this.score,
+    keepPlaying: this.keepPlaying
+  });
 };
 
 // Adds a tile in a random position
@@ -90,17 +111,13 @@ GameManager.prototype.addRandomTile = function () {
 };
 
 GameManager.prototype.undoMove = function() {
-  var undoTiles = localStorage.getItem('undotiles');
-  if (undoTiles) {
-    localStorage.setItem('tiles', undoTiles);
-    localStorage.removeItem('undotiles');
-    this.setup();
-  }
+  this.scoreManager.popState();
+  this.setup();
 };
 
 // Sends the updated grid to the actuator
 GameManager.prototype.actuate = function () {
-  this.scoreManager.setScore(this.score);
+
   if (this.scoreManager.getBestScore() < this.score) {
     this.scoreManager.setBestScore(this.score);
   }
@@ -192,10 +209,9 @@ GameManager.prototype.move = function (direction) {
       this.over = true; // Game over!
     }
 
+    self.saveTiles();
     this.actuate();
   }
-
-  self.saveTiles();
 
 };
 

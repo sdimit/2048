@@ -20,9 +20,7 @@ window.fakeStorage = {
 
 function LocalScoreManager() {
   this.bestScoreKey     = "bestScore";
-  this.scoreKey         = "score";
-  this.tilesKey         = "tiles";
-  this.undoStateKey     = "undoState";
+  this.gameStatesKey    = "gameStates";
 
   var supported = this.localStorageSupported();
   this.storage = supported ? window.localStorage : window.fakeStorage;
@@ -49,25 +47,31 @@ LocalScoreManager.prototype.setBestScore = function (score) {
   this.storage.setItem(this.bestScoreKey, score);
 };
 
-LocalScoreManager.prototype.getScore = function () {
-  return parseInt(this.storage.getItem(this.scoreKey)) || 0;
+LocalScoreManager.prototype.getGameStates = function () {
+  var gameStates = JSON.parse(this.storage.getItem(this.gameStatesKey));
+  if (!gameStates) gameStates = new Array();
+  return gameStates;
+}
+
+LocalScoreManager.prototype.pushState = function (newState) {
+  var gameStates = this.getGameStates();
+      gameStates.push(newState);
+  this.storage.setItem(this.gameStatesKey, JSON.stringify(gameStates));
 };
 
-LocalScoreManager.prototype.setScore = function (score) {
-  this.storage.setItem(this.scoreKey, score);
+LocalScoreManager.prototype.popState = function (state) {
+  var gameStates = this.getGameStates();
+  if (gameStates.length > 1) {
+    gameStates.pop();
+    this.storage.setItem(this.gameStatesKey, JSON.stringify(gameStates));
+  }
 };
 
-LocalScoreManager.prototype.getTiles = function () {
-  return JSON.parse(this.storage.getItem(this.tilesKey)) || null;
-};
-
-LocalScoreManager.prototype.setTiles = function (tiles) {
-  this.storage.setItem(this.tilesKey, JSON.stringify(tiles));
+LocalScoreManager.prototype.curState = function (state) {
+  var gameStates = this.getGameStates();
+  return gameStates.pop();
 };
 
 LocalScoreManager.prototype.clearState = function () {
-  this.storage.removeItem(this.undoStateKey);
-  this.storage.removeItem(this.tilesKey);
-  this.storage.removeItem(this.scoreKey);
-
+  this.storage.removeItem(this.gameStatesKey);
 };
