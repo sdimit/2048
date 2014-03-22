@@ -12,6 +12,7 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
   this.inputManager.on("undoMove", this.undoMove.bind(this));
 
   this.setup();
+  this.actuate();
 }
 
 // Restart the game
@@ -19,6 +20,7 @@ GameManager.prototype.restart = function () {
   this.actuator.continue();
   this.scoreManager.clearState();
   this.setup();
+  this.actuate();
 };
 
 // Keep playing after winning
@@ -39,18 +41,17 @@ GameManager.prototype.isGameTerminated = function () {
 GameManager.prototype.setup = function () {
   this.grid        = new Grid(this.size);
 
-  var state        = this.getCurrentState();
+  var curState        = this.getCurrentState();
 
-  this.score       = state.score;
-  this.over        = state.over;
-  this.won         = state.won;
-  this.keepPlaying = state.keepPlaying;
+  this.score       = curState.score;
+  this.over        = curState.over;
+  this.won         = curState.won;
+  this.keepPlaying = curState.keepPlaying;
 
   // Add the initial tiles
-  this.addStartTiles(state.tiles);
-
+  this.addStartTiles(curState.tiles);
   // Update the actuator
-  this.actuate();
+  // this.actuate();
 };
 
 GameManager.prototype.getCurrentState = function() {
@@ -84,6 +85,7 @@ GameManager.prototype.restoreTiles = function (tiles) {
     for (var y = 0; y < this.size; y++) {
       if (tiles[x][y]) {
         var tile = new Tile ({x:x, y:y}, tiles[x][y].value);
+        tile.previousPosition = tiles[x][y].previousPosition;
         this.grid.insertTile(tile);
       }
     }
@@ -113,6 +115,7 @@ GameManager.prototype.addRandomTile = function () {
 GameManager.prototype.undoMove = function() {
   this.scoreManager.popState();
   this.setup();
+  this.actuate();
 };
 
 // Sends the updated grid to the actuator
@@ -153,6 +156,7 @@ GameManager.prototype.moveTile = function (tile, cell) {
 GameManager.prototype.move = function (direction) {
   // 0: up, 1: right, 2:down, 3: left
   var self = this;
+  this.curState        = this.getCurrentState();
 
   if (this.isGameTerminated()) return; // Don't do anything if the game's over
 
@@ -196,6 +200,8 @@ GameManager.prototype.move = function (direction) {
         }
 
         if (!self.positionsEqual(cell, tile)) {
+          var curTile = self.curState.tiles[tile.previousPosition.x][tile.previousPosition.y];
+          if (curTile) curTile.previousPosition = {x: tile.x, y: tile.y};
           moved = true; // The tile moved from its original cell!
         }
       }
@@ -209,7 +215,9 @@ GameManager.prototype.move = function (direction) {
       this.over = true; // Game over!
     }
 
-    self.saveTiles();
+    this.scoreManager.popState();
+    this.scoreManager.pushState(this.curState);
+    this.saveTiles();
     this.actuate();
   }
 
