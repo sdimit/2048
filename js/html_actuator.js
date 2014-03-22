@@ -64,7 +64,6 @@ HTMLActuator.prototype.addTile = function (tile) {
   inner.classList.add("tile-inner");
   inner.textContent = tile.value;
   if (tile.previousPosition) {
-    console.log("animatin")
     // Make sure that the tile gets rendered in the previous position first
     window.requestAnimationFrame(function () {
       classes[2] = self.positionClass({ x: tile.x, y: tile.y });
