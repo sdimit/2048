@@ -12,7 +12,7 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
   this.inputManager.on("undoMove", this.undoMove.bind(this));
 
   this.setup();
-  this.actuate();
+  this.actuate(false);
 }
 
 // Restart the game
@@ -20,7 +20,7 @@ GameManager.prototype.restart = function () {
   this.actuator.continue();
   this.scoreManager.clearState();
   this.setup();
-  this.actuate();
+  this.actuate(false);
 };
 
 // Keep playing after winning
@@ -41,7 +41,7 @@ GameManager.prototype.isGameTerminated = function () {
 GameManager.prototype.setup = function () {
   this.grid        = new Grid(this.size);
 
-  var curState        = this.getCurrentState();
+  var curState     = this.getCurrentState();
 
   this.score       = curState.score;
   this.over        = curState.over;
@@ -51,11 +51,12 @@ GameManager.prototype.setup = function () {
   // Add the initial tiles
   this.addStartTiles(curState.tiles);
   // Update the actuator
-  // this.actuate();
+  // this.actuate(false);
 };
 
 GameManager.prototype.getCurrentState = function() {
   var localState = this.scoreManager.curState();
+  console.log(localState)
   if (!localState) {
     localState = {
       tiles:       null,
@@ -86,6 +87,8 @@ GameManager.prototype.restoreTiles = function (tiles) {
       if (tiles[x][y]) {
         var tile = new Tile ({x:x, y:y}, tiles[x][y].value);
         tile.previousPosition = tiles[x][y].previousPosition;
+        tile.mergedFrom       = tiles[x][y].mergedFrom;
+        tile.isNew            = tiles[x][y].isNew;
         this.grid.insertTile(tile);
       }
     }
@@ -113,25 +116,29 @@ GameManager.prototype.addRandomTile = function () {
 };
 
 GameManager.prototype.undoMove = function() {
-  this.scoreManager.popState();
-  this.setup();
-  this.actuate();
+  if (this.scoreManager.numOfStates() > 1) {
+    this.scoreManager.popState();
+    this.actuate(true);
+    this.setup();
+  } else {this.restart()}
+  //this.actuate(false);
 };
 
 // Sends the updated grid to the actuator
-GameManager.prototype.actuate = function () {
+GameManager.prototype.actuate = function (shouldReverse) {
 
   if (this.scoreManager.getBestScore() < this.score) {
     this.scoreManager.setBestScore(this.score);
   }
-
+console.log(shouldReverse)
+console.log(this.grid)
   this.actuator.actuate(this.grid, {
     score:      this.score,
     over:       this.over,
     won:        this.won,
     bestScore:  this.scoreManager.getBestScore(),
     terminated: this.isGameTerminated()
-  });
+  }, shouldReverse);
 
 };
 
@@ -140,6 +147,7 @@ GameManager.prototype.prepareTiles = function () {
   this.grid.eachCell(function (x, y, tile) {
     if (tile) {
       tile.mergedFrom = null;
+      tile.isNew = false;
       tile.savePosition();
     }
   });
@@ -206,26 +214,26 @@ GameManager.prototype.move = function (direction) {
     });
   });
 
-  this.grid.eachCell(function (x, y, tile) {
-    if (tile) {
-      if (tile.previousPosition) {
-        var prevPos = tile.previousPosition;
-        var curTile = self.curState.tiles[prevPos.x][prevPos.y];
-        if (curTile) curTile.previousPosition = {x: tile.x, y: tile.y};
-      }
-
-      if (tile.mergedFrom) {
-        tile.mergedFrom.forEach(function (m) {
-          // weird but necessary inconsistency in the original code
-          // since the mergedfrom cells move towards the tile
-          // previousPosition should contain the starting point i.e. the cells' location
-          var mergedCell = m.previousPosition;
-          var curTile = self.curState.tiles[mergedCell.x][mergedCell.y];
-          if (curTile) curTile.previousPosition = {x: tile.x, y: tile.y};
-        });
-      }
-    }
-  });
+  // this.grid.eachCell(function (x, y, tile) {
+  //   if (tile) {
+  //     if (tile.previousPosition) {
+  //       var prevPos = tile.previousPosition;
+  //       var curTile = self.curState.tiles[prevPos.x][prevPos.y];
+  //       if (curTile) curTile.previousPosition = {x: tile.x, y: tile.y};
+  //     }
+  //
+  //     if (tile.mergedFrom) {
+  //       tile.mergedFrom.forEach(function (m) {
+  //         // weird but necessary inconsistency in the original code
+  //         // since the mergedfrom cells move towards the tile
+  //         // previousPosition should contain the starting point i.e. the cells' location
+  //         var mergedCell = m.previousPosition;
+  //         var curTile = self.curState.tiles[mergedCell.x][mergedCell.y];
+  //         if (curTile) curTile.previousPosition = {x: tile.x, y: tile.y};
+  //       });
+  //     }
+  //   }
+  // });
 
   if (moved) {
     this.addRandomTile();
@@ -237,7 +245,7 @@ GameManager.prototype.move = function (direction) {
     this.scoreManager.popState();
     this.scoreManager.pushState(this.curState);
     this.saveTiles();
-    this.actuate();
+    this.actuate(false);
   }
 
 };

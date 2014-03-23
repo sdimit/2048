@@ -61,15 +61,18 @@ LocalScoreManager.prototype.pushState = function (newState) {
 
 LocalScoreManager.prototype.popState = function (state) {
   var gameStates = this.getGameStates();
-  if (gameStates.length > 1) {
-    gameStates.pop();
-    this.storage.setItem(this.gameStatesKey, JSON.stringify(gameStates));
-  }
+      gameStates.pop();
+  this.storage.setItem(this.gameStatesKey, JSON.stringify(gameStates));
 };
 
 LocalScoreManager.prototype.curState = function (state) {
   var gameStates = this.getGameStates();
   return gameStates.pop();
+};
+
+LocalScoreManager.prototype.numOfStates = function (state) {
+  var gameStates = this.getGameStates();
+  return gameStates.length;
 };
 
 LocalScoreManager.prototype.clearState = function () {

@@ -7,7 +7,7 @@ function HTMLActuator() {
   this.score = 0;
 }
 
-HTMLActuator.prototype.actuate = function (grid, metadata) {
+HTMLActuator.prototype.actuate = function (grid, metadata, shouldReverse) {
   var self = this;
 
   window.requestAnimationFrame(function () {
@@ -16,7 +16,7 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
     grid.cells.forEach(function (column) {
       column.forEach(function (cell) {
         if (cell) {
-          self.addTile(cell);
+          self.addTile(cell, shouldReverse);
         }
       });
     });
@@ -46,16 +46,19 @@ HTMLActuator.prototype.clearContainer = function (container) {
   }
 };
 
-HTMLActuator.prototype.addTile = function (tile) {
+HTMLActuator.prototype.addTile = function (tile, shouldReverse) {
   var self = this;
 
   var wrapper   = document.createElement("div");
   var inner     = document.createElement("div");
-  var position  = tile.previousPosition || { x: tile.x, y: tile.y };
-  var positionClass = this.positionClass(position);
+  // var position  = tile.previousPosition || { x: tile.x, y: tile.y };
+  var fromPosition = (!tile.previousPosition || shouldReverse)
+                   ? { x: tile.x, y: tile.y }
+                   : tile.previousPosition;
+  var fromPositionClass = this.positionClass(fromPosition);
 
   // We can't use classlist because it somehow glitches when replacing classes
-  var classes = ["tile", "tile-" + tile.value, positionClass];
+  var classes = ["tile", "tile-" + tile.value, fromPositionClass];
 
   if (tile.value > 2048) classes.push("tile-super");
 
@@ -63,19 +66,29 @@ HTMLActuator.prototype.addTile = function (tile) {
 
   inner.classList.add("tile-inner");
   inner.textContent = tile.value;
+
+  if (shouldReverse && tile.isNew) {
+      classes.push("reverse");
+      this.applyClasses(wrapper, classes);
+  }
+
   if (tile.previousPosition) {
     // Make sure that the tile gets rendered in the previous position first
     window.requestAnimationFrame(function () {
-      classes[2] = self.positionClass({ x: tile.x, y: tile.y });
+      var toPosition = (shouldReverse)
+                        ? tile.previousPosition
+                        : { x: tile.x, y: tile.y };
+      classes[2] = self.positionClass(toPosition);
       self.applyClasses(wrapper, classes); // Update the position
     });
   } else if (tile.mergedFrom) {
-    classes.push("tile-merged");
+    if (shouldReverse) classes.push("reverse");
+    else classes.push("tile-merged");
     this.applyClasses(wrapper, classes);
 
     // Render the tiles that merged
     tile.mergedFrom.forEach(function (merged) {
-      self.addTile(merged);
+      self.addTile(merged, shouldReverse);
     });
   } else {
     classes.push("tile-new");
