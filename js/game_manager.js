@@ -116,12 +116,10 @@ GameManager.prototype.addRandomTile = function () {
 };
 
 GameManager.prototype.undoMove = function() {
-  if (this.scoreManager.numOfStates() > 1) {
     this.scoreManager.popState();
-    this.actuate(true);
+    this.actuate(true); // animate the current state backwards
     this.setup();
-  } else {this.restart()}
-  //this.actuate(false);
+    this.actuate(false); // animate the restored undo state forwards
 };
 
 // Sends the updated grid to the actuator

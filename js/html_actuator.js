@@ -11,7 +11,6 @@ HTMLActuator.prototype.actuate = function (grid, metadata, shouldReverse) {
   var self = this;
 
   window.requestAnimationFrame(function () {
-    self.clearContainer(self.tileContainer);
 
     grid.cells.forEach(function (column) {
       column.forEach(function (cell) {
@@ -33,6 +32,9 @@ HTMLActuator.prototype.actuate = function (grid, metadata, shouldReverse) {
     }
 
   });
+
+  self.clearContainer(self.tileContainer);
+
 };
 
 // Continues the game (both restart and keep playing)
