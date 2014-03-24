@@ -215,27 +215,6 @@ GameManager.prototype.move = function (direction) {
     });
   });
 
-  // this.grid.eachCell(function (x, y, tile) {
-  //   if (tile) {
-  //     if (tile.previousPosition) {
-  //       var prevPos = tile.previousPosition;
-  //       var curTile = self.curState.tiles[prevPos.x][prevPos.y];
-  //       if (curTile) curTile.previousPosition = {x: tile.x, y: tile.y};
-  //     }
-  //
-  //     if (tile.mergedFrom) {
-  //       tile.mergedFrom.forEach(function (m) {
-  //         // weird but necessary inconsistency in the original code
-  //         // since the mergedfrom cells move towards the tile
-  //         // previousPosition should contain the starting point i.e. the cells' location
-  //         var mergedCell = m.previousPosition;
-  //         var curTile = self.curState.tiles[mergedCell.x][mergedCell.y];
-  //         if (curTile) curTile.previousPosition = {x: tile.x, y: tile.y};
-  //       });
-  //     }
-  //   }
-  // });
-
   if (moved) {
     this.addRandomTile();
 
@@ -243,8 +222,6 @@ GameManager.prototype.move = function (direction) {
       this.over = true; // Game over!
     }
 
-    this.scoreManager.popState();
-    this.scoreManager.pushState(this.curState);
     this.saveTiles();
     this.actuate(false);
   }
