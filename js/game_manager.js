@@ -56,7 +56,7 @@ GameManager.prototype.setup = function () {
 
 GameManager.prototype.getCurrentState = function() {
   var localState = this.scoreManager.curState();
-  console.log(localState)
+
   if (!localState) {
     localState = {
       tiles:       null,
@@ -131,8 +131,7 @@ GameManager.prototype.actuate = function (shouldReverse) {
   if (this.scoreManager.getBestScore() < this.score) {
     this.scoreManager.setBestScore(this.score);
   }
-console.log(shouldReverse)
-console.log(this.grid)
+
   this.actuator.actuate(this.grid, {
     score:      this.score,
     over:       this.over,
