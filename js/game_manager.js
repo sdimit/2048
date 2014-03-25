@@ -12,7 +12,7 @@ function GameManager(size, InputManager, Actuator, ScoreManager) {
   this.inputManager.on("undoMove", this.undoMove.bind(this));
 
   this.setup();
-  this.actuate(false);
+  this.actuate(this.actuator.animation.RESTORE);
 }
 
 // Restart the game
@@ -20,7 +20,7 @@ GameManager.prototype.restart = function () {
   this.actuator.continue();
   this.scoreManager.clearState();
   this.setup();
-  this.actuate(false);
+  this.actuate(this.actuator.animation.RESTORE);
 };
 
 // Keep playing after winning
@@ -116,10 +116,11 @@ GameManager.prototype.addRandomTile = function () {
 };
 
 GameManager.prototype.undoMove = function() {
-  this.actuate(true);
+  this.actuate(this.actuator.animation.UNDO);
   if (this.scoreManager.numOfStates() > 1) {
     this.scoreManager.popState();
     this.setup();
+    this.actuate(this.actuator.animation.NONE);
   } else {
     this.restart();
   }
@@ -222,7 +223,7 @@ GameManager.prototype.move = function (direction) {
     }
 
     this.saveTiles();
-    this.actuate(false);
+    this.actuate(this.actuator.animation.MOVE);
   }
 
 };

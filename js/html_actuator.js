@@ -5,20 +5,29 @@ function HTMLActuator() {
   this.messageContainer = document.querySelector(".game-message");
 
   this.score = 0;
+
+  this.animation = {
+    NONE: 0, // when we want to update score, etc.
+    MOVE: 1, // when moved was performed
+    UNDO: 2, // when undoing a move
+    RESTORE: 3 // when restoring tiles from local storage
+  };
 }
 
-HTMLActuator.prototype.actuate = function (grid, metadata, shouldReverse) {
+HTMLActuator.prototype.actuate = function (grid, metadata, anim) {
   var self = this;
 
   window.requestAnimationFrame(function () {
 
-    grid.cells.forEach(function (column) {
-      column.forEach(function (cell) {
-        if (cell) {
-          self.addTile(cell, shouldReverse);
-        }
+    if (anim != self.animation.NONE) {
+      grid.cells.forEach(function (column) {
+        column.forEach(function (cell) {
+          if (cell) {
+            self.addTile(cell, anim);
+          }
+        });
       });
-    });
+    }
 
     self.updateScore(metadata.score);
     self.updateBestScore(metadata.bestScore);
@@ -48,8 +57,10 @@ HTMLActuator.prototype.clearContainer = function (container) {
   }
 };
 
-HTMLActuator.prototype.addTile = function (tile, shouldReverse) {
+HTMLActuator.prototype.addTile = function (tile, animation) {
   var self = this;
+  var shouldReverse = (animation == self.animation.UNDO)
+                    ? true : false;
 
   var wrapper   = document.createElement("div");
   var inner     = document.createElement("div");
@@ -74,7 +85,10 @@ HTMLActuator.prototype.addTile = function (tile, shouldReverse) {
       this.applyClasses(wrapper, classes);
   }
 
-  if (tile.previousPosition) {
+  if (animation == self.animation.RESTORE) {
+    classes.push("tile-new");
+    this.applyClasses(wrapper, classes);
+  } else if (tile.previousPosition) {
     // Make sure that the tile gets rendered in the previous position first
     window.requestAnimationFrame(function () {
       var toPosition = (shouldReverse)
@@ -90,7 +104,7 @@ HTMLActuator.prototype.addTile = function (tile, shouldReverse) {
 
     // Render the tiles that merged
     tile.mergedFrom.forEach(function (merged) {
-      self.addTile(merged, shouldReverse);
+      self.addTile(merged, animation);
     });
   } else {
     classes.push("tile-new");
